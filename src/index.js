@@ -16,7 +16,7 @@ const checksExistsUserAccount = (request, response, next) => {
   const user = users.find((user) => user.username === username);
 
   if (!user) {
-    return response.status(400).json({ error: "User not found" });
+    return response.status(404).json({ error: "User not found" });
   }
 
   request.user = user;
@@ -41,6 +41,14 @@ app.post("/users", (request, response) => {
   });
 
   return response.status(201).send();
+});
+
+app.get("/users", (request, response) => {
+  if (!users) {
+    return response.status(404).json({ error: "There arent users!" });
+  }
+
+  return response.status(201).json(users);
 });
 
 app.use(checksExistsUserAccount);
@@ -93,12 +101,35 @@ app.put("/todos/:id", (request, response) => {
   return response.json(user.todos);
 });
 
-app.patch(
-  "/todos/:id/done",
-  checksExistsUserAccount,
-  (request, response) => {}
-);
+app.patch("/todos/:id/done", (request, response) => {
+  const { id } = request.params;
+  const { user } = request;
 
-app.delete("/todos/:id", (request, response) => {});
+  const findId = user.todos.find((item) => item.id === id);
+
+  if (!findId) {
+    return response.status(404).json({ error: "Todo Not Found" });
+  }
+
+  findId.done = true;
+
+  return response.json(findId);
+});
+
+app.delete("/todos/:id", (request, response) => {
+  const { id } = request.params;
+  const { user } = request;
+
+  const deleteId = user.todos.findIndex((item) => item.id === id);
+  // Utilizando isso para percorrer o array e achar a posição no array que ele se encontra.
+
+  if (deleteId === -1) {
+    return response.status(404).json({ error: "Todo Not Found" });
+  }
+
+  user.todos.splice(deleteId, 1);
+
+  return response.status(204);
+});
 
 module.exports = app;
